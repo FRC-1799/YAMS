@@ -475,14 +475,14 @@ public abstract class SmartMotorController
   /**
    * Set the encoder position
    *
-   * @param angle Mechanism {@link Angle} to reach.
+   * @param angle Current Mechanism {@link Angle}.
    */
   public abstract void setEncoderPosition(Angle angle);
 
   /**
    * Set the encoder position.
    *
-   * @param distance Measurement {@link Distance} to reach.
+   * @param distance Current Measurement {@link Distance}.
    */
   public abstract void setEncoderPosition(Distance distance);
 
@@ -523,7 +523,7 @@ public abstract class SmartMotorController
    * @param testDuration Duration of each {@link SysIdRoutine} run.
    * @return {@link Config} of the {@link SysIdRoutine} to run.
    */
-  protected Config getSysIdConfig(Voltage maxVoltage, Velocity<VoltageUnit> stepVoltage, Time testDuration)
+  public Config getSysIdConfig(Voltage maxVoltage, Velocity<VoltageUnit> stepVoltage, Time testDuration)
   {
     return new Config(stepVoltage, maxVoltage, testDuration);
   }

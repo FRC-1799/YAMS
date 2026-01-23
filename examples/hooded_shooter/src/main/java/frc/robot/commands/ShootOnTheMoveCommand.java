@@ -1,7 +1,10 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Radians;
 
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -9,6 +12,10 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.subsystems.FlywheelSubsystem;
+import frc.robot.subsystems.HoodSubsystem;
+import frc.robot.subsystems.TurretSubsystem;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -19,11 +26,26 @@ import java.util.function.Supplier;
 public class ShootOnTheMoveCommand extends Command
 {
 
+  // Subsystems
+  private final TurretSubsystem   turretSubsystem;
+  private final HoodSubsystem     hoodSubsystem;
+  private final FlywheelSubsystem flywheelSubsystem;
+
+  /**
+   * Current robot pose. (Blue-alliance)
+   */
   private final Supplier<Pose2d>        robotPose;
+  /**
+   * Current field-oriented chassis speeds.
+   */
   private final Supplier<ChassisSpeeds> fieldOrientedChassisSpeeds;
+  /**
+   * Pose to shoot at.
+   */
   private final Pose2d                  goalPose;
 
   // Tuned Constants
+  double totalExitVelocity = 15.0; // m/s
   /**
    * Time in seconds between when the robot is told to move and when the shooter actually shoots.
    */
@@ -33,10 +55,23 @@ public class ShootOnTheMoveCommand extends Command
    */
   private final InterpolatingDoubleTreeMap shooterTable = new InterpolatingDoubleTreeMap();
 
-
-  public ShootOnTheMoveCommand(Supplier<Pose2d> currentPose, Supplier<ChassisSpeeds> fieldOrientedChassisSpeeds,
+  /**
+   * Shoot on the move command to always have the turret ready to fire.
+   *
+   * @param turret                     Turret subsystem
+   * @param hood                       Hood subsystem
+   * @param flyWheel                   Flywheel subsystem
+   * @param currentPose                Current robot pose.
+   * @param fieldOrientedChassisSpeeds Current field-oriented chassis speeds.
+   * @param goal                       Goal to shoot at.
+   */
+  public ShootOnTheMoveCommand(TurretSubsystem turret, HoodSubsystem hood, FlywheelSubsystem flyWheel,
+                               Supplier<Pose2d> currentPose, Supplier<ChassisSpeeds> fieldOrientedChassisSpeeds,
                                Pose2d goal)
   {
+    turretSubsystem = turret;
+    hoodSubsystem = hood;
+    flywheelSubsystem = flyWheel;
     robotPose = currentPose;
     this.fieldOrientedChassisSpeeds = fieldOrientedChassisSpeeds;
     this.goalPose = goal;
@@ -48,7 +83,7 @@ public class ShootOnTheMoveCommand extends Command
     )
     {shooterTable.put(entry.getFirst().in(Meters), entry.getSecond().in(RPM));}
 
-    addRequirements();
+    setName("Shoot on the move");
   }
 
   @Override
@@ -91,16 +126,14 @@ public class ShootOnTheMoveCommand extends Command
 
     // 6. SOLVE FOR NEW PITCH/RPM
     // Assuming constant total exit velocity, variable hood:
-    double totalExitVelocity = 15.0; // m/s
     // Clamp to avoid domain errors if we need more speed than possible
     double ratio    = Math.min(newHorizontalSpeed / totalExitVelocity, 1.0);
     double newPitch = Math.acos(ratio);
 
     // 7. SET OUTPUTS
-    //turret.setAngle(turretAngle); // Could also just set the swerveDrive to point towards this angle like AlignToGoal
-    //hood.setAngle(Math.toDegrees(newPitch));
-    //shooter.setRPM(MetersPerSecond.of(totalExitVelocity));
-
+    turretSubsystem.setAngleDirect(Degrees.of(turretAngle));
+    hoodSubsystem.setAngleDirect(Radians.of(newPitch));
+    flywheelSubsystem.setRPMDirect(MetersPerSecond.of(totalExitVelocity));
   }
 
   @Override
