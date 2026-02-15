@@ -81,6 +81,10 @@ public class ElevatorConfig
    * Soft limits of the {@link SmartMotorController} closed loop controller. Can be exceeded. (LowerLimit, UpperLimit)
    */
   private Optional<Pair<Distance, Distance>> softLimits = Optional.empty();
+  /**
+   * Disable gravity on the elevator simulation.
+   */
+  private boolean       isElevatorHorizontal          = false;
 
   /**
    * Elevator Configuration class
@@ -320,6 +324,18 @@ public class ElevatorConfig
   }
 
   /**
+   * Set elevator as horizontal to avoid gravity simulation
+   * 
+   * 
+   * @return {@link ElevatorConfig} for chaining.
+   */
+  public ElevatorConfig withHorizontalElevator()
+  {
+    isElevatorHorizontal = true;
+    return this;
+  }
+
+  /**
    * Apply config changes from this class to the {@link SmartMotorController}
    *
    * @return {@link SmartMotorController#applyConfig(SmartMotorControllerConfig)} result.
@@ -439,6 +455,16 @@ public class ElevatorConfig
     return carriageWeight;
   }
 
+
+  /**
+   * Get if the elevator is horizontal
+   *
+   * @return if elevator is horizontal.
+   */
+  public boolean getIsElevatorHorizontal()
+  {
+    return isElevatorHorizontal;
+  }
 
   /**
    * Get the mechanism position configuration of the elevator.
